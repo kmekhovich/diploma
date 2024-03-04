@@ -3,9 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
 import decimal
 from math import sin, cos, atan2, sqrt, pi, log10
+import os
+from dotenv import load_dotenv
+
+envs_file = os.path.expanduser('~/envs.sh')
+load_dotenv(envs_file)
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kmekhovichlbs:lbspassword@kmekhovichlbs.mysql.pythonanywhere-services.com/kmekhovichlbs$default'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
