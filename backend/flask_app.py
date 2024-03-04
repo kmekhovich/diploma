@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
 import decimal
@@ -6,9 +6,8 @@ from math import sin, cos, atan2, sqrt, pi, log10
 import os
 from dotenv import load_dotenv
 
-envs_file = os.path.expanduser('~/envs.sh')
-load_dotenv(envs_file)
 
+load_dotenv('envs.sh')
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -144,3 +143,8 @@ def detect():
 
 
     return jsonify({"lat": sumlat / cnt, "lon": sumlon / cnt, "count": cnt, "wifi": new_wifis}), 200
+
+@app.route('/map', methods=['GET'])
+def map():
+    wifis = Wifi.query.all()
+    return render_template('map.html', wifis=wifis)

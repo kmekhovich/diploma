@@ -15,3 +15,4 @@ __pycache__/flask_app.cpython-310.pyc
 .externalNativeBuild
 .cxx
 local.properties
+__pycache__

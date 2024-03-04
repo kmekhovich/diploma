@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Карта с маркерами</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <style>
+        #map {
+            height: 800px;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster-src.js"></script>
+
+<div id="map"></div>
+<script>
+    var map = L.map('map').setView([53.9, 27.5667], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var markers = L.markerClusterGroup();
+    {% for wifi in wifis %}
+        markers.addLayer(L.marker([{{wifi.lat}}, {{wifi.lon}}]));
+    {% endfor %}
+    map.addLayer(markers);
+</script>
+</body>
+</html>
+
