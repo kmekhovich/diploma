@@ -51,10 +51,16 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
+import android.telephony.TelephonyManager
+import android.telephony.CellInfo
+import android.telephony.CellInfoGsm
+import android.telephony.CellInfoLte
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var map: MapView
+    private val PERMISSIONS_REQUEST_CODE = 101
+
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     @SuppressLint("UseSwitchCompatOrMaterialCode")
@@ -104,9 +110,66 @@ class MainActivity : AppCompatActivity() {
         map.overlays.add(markersOverlay)
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        if (requestCode == PERMISSIONS_REQUEST_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+//            // Все разрешения предоставлены, можно сканировать вышки
+//            scanCellTowers()
+//        }
+    }
+
+    private fun scanCellTowers(): List<GsmResultV0> {
+        val results = mutableListOf<GsmResultV0>()
+
+        val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val cellInfoList: List<CellInfo>? = telephonyManager.allCellInfo
+            cellInfoList?.forEach { cellInfo ->
+                Log.e("r", cellInfo.toString())
+                if (cellInfo is CellInfoGsm) {
+                    val cellIdentity = cellInfo.cellIdentity
+                    val cellSignalStrength = cellInfo.cellSignalStrength
+                    results.add(
+                        GsmResultV0(
+                            mcc = cellIdentity.mcc,
+                            mnc = cellIdentity.mnc,
+                            lac = cellIdentity.lac,
+                            cellId = cellIdentity.cid,
+                            level = cellSignalStrength.dbm
+                        )
+                    )
+                } else if (cellInfo is CellInfoLte) {
+                    val cellIdentity = cellInfo.cellIdentity
+                    val cellSignalStrength = cellInfo.cellSignalStrength
+                    results.add(
+                        GsmResultV0(
+                            mcc = cellIdentity.mcc,
+                            mnc = cellIdentity.mnc,
+                            lac = cellIdentity.tac,
+                            cellId = cellIdentity.ci,
+                            level = cellSignalStrength.dbm
+                        )
+                    )
+                }
+            }
+        }
+
+        return results
+    }
+
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Проверяем разрешения
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+
+            // Запрашиваем разрешения, если они еще не предоставлены
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.READ_PHONE_STATE), PERMISSIONS_REQUEST_CODE)
+        }
 
         val osmConfig = Configuration.getInstance()
         osmConfig.userAgentValue = packageName
@@ -346,6 +409,29 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    data class InputGps(
+        val lat: Double,
+        val lon: Double
+    )
+    data class CombinedScanResult(
+        val wifiList: List<ScanResultVO>,
+        val cellList: List<GsmResultV0>,
+        val inputGps: InputGps
+    ) {
+
+    }
+
+    data class GsmResultV0(
+        val mcc: Int,
+        val mnc: Int,
+        val lac: Int,
+        val cellId: Int,
+        val level: Int,
+        val lat: Double = 0.0,
+        val lon: Double = 0.0
+    ) {
+    }
+
 
     data class LbsResponse(
         var count: String,
@@ -391,6 +477,11 @@ class MainActivity : AppCompatActivity() {
         var lon: String
     )
 
+    data class Cell(
+        var lat: String,
+        var lon: String
+    )
+
     private fun drawWifi(wifiList: List<Wifi>, color: Int = Color.BLUE) {
         for (wifi in wifiList) {
             val myLocation = GeoPoint(
@@ -429,11 +520,50 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun drawCells(cellList: List<Cell>, color: Int = Color.BLACK) {
+        for (cell in cellList) {
+            val myLocation = GeoPoint(
+                cell.lat.toDouble(),
+                cell.lon.toDouble()
+            )
+            val myMarker = OverlayItem("Title", "Description", myLocation)
+            val d = ShapeDrawable(OvalShape())
+            d.intrinsicHeight = 50
+            d.intrinsicWidth = 50
+            d.paint.color = color
+            myMarker.setMarker(d)
+            val markersOverlay = ItemizedOverlayWithFocus<OverlayItem>(
+                this,
+                listOf(myMarker),
+                object :
+                    ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
+                    override fun onItemSingleTapUp(
+                        index: Int,
+                        item: OverlayItem
+                    ): Boolean {
+                        // Реакция на одиночный тап по маркеру
+                        return true
+                    }
+
+                    override fun onItemLongPress(
+                        index: Int,
+                        item: OverlayItem
+                    ): Boolean {
+                        // Реакция на долгий тап по маркеру
+                        return false
+                    }
+                }
+            )
+            map.overlays.add(markersOverlay)
+        }
+    }
+
     data class LocationResponse(
         var lat: String,
         var lon: String,
         var count: String,
-        var wifi: List<Wifi>
+        var wifi: List<Wifi>,
+        var cells: List<Cell>
     )
 
     private fun Distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -457,9 +587,11 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         val wifiScanResultVOList = wifiList.map { ScanResultVO(it) }
+        val cellTowersResultV0List = scanCellTowers()
         val service = retrofit.create(ApiService::class.java)
 
-        val call = service.sendDetect(wifiScanResultVOList)
+        val combinedScanResult = CombinedScanResult(wifiScanResultVOList, cellTowersResultV0List, InputGps(location.latitude, location.longitude))
+        val call = service.sendDetect(combinedScanResult)
 
         call.enqueue(object : retrofit2.Callback<LocationResponse> {
             override fun onResponse(call: retrofit2.Call<LocationResponse>, response: Response<LocationResponse>) {
@@ -475,8 +607,9 @@ class MainActivity : AppCompatActivity() {
                         setPoint(location.latitude, location.longitude, setCenter = !switch.isChecked)
                         setPoint(lat, lon, Color.YELLOW, setCenter = true)
 
-                        makeToast("Location based on ${locationResponse.count} wifi. Error is %.2f meters".format(Distance(lat, lon, location.latitude, location.longitude)))
+                        makeToast("Location based on ${locationResponse.count} wifi. Error is %.2f meters. Found ${locationResponse.cells.size} cells".format(Distance(lat, lon, location.latitude, location.longitude)))
                         drawWifi(locationResponse.wifi.toList())
+                        drawCells(locationResponse.cells.toList())
                     }
                 }
             }
@@ -545,7 +678,7 @@ class MainActivity : AppCompatActivity() {
         fun sendWifiScanResult(@Body wifiList: List<ScanResultVO>): retrofit2.Call<LbsResponse>
 
         @POST("detect")
-        fun sendDetect(@Body wifiList: List<ScanResultVO>): retrofit2.Call<LocationResponse>
+        fun sendDetect(@Body combinedScanResult: CombinedScanResult): retrofit2.Call<LocationResponse>
 
         @GET("get_all")
         fun getAllWifi(): retrofit2.Call<LocationResponse>
