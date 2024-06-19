@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+    <title>Перцентили расстояний</title>
+    <style>
+        body {
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Algo</th>
+                <th>25%</th>
+                <th>50%</th>
+                <th>75%</th>
+                <th>90%</th>
+                <th>95%</th>
+                <th>99%</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in data %}
+            <tr>
+                <td>{{ item['algo'] }}</td>
+                {% for percentile in item['percentiles'] %}
+                <td>{{ percentile }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

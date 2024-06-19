@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Item Details</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #mapid { height: 900px; }
+    </style>
+</head>
+<body>
+    <h2>Item Details</h2>
+    <div id="mapid"></div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+
+        // Инициализируем карту, центрируем на output
+        var mymap = L.map('mapid').setView([{{ log.output.lat }}, {{ log.output.lon }}], 18);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 25,
+        }).addTo(mymap);
+
+        L.circleMarker([{{ log.output.lat }}, {{ log.output.lon }}], {
+            color: '#FFFF00',
+            fillColor: '#FFFF00',
+            fillOpacity: 0.5,
+            radius: 10
+        }).addTo(mymap).bindPopup("Algo result");
+
+        L.circleMarker([{{ log.inputGps.lat }}, {{ log.inputGps.lon }} ], {
+            color: '#FF0000',
+            fillColor: '#FF0000',
+            fillOpacity: 0.5,
+            radius: 10
+        }).addTo(mymap).bindPopup("GPS result");
+
+
+        {% for query in log.queries %}
+            {% if 'wifi' in query %}
+                L.circleMarker([{{ query.wifi.lat }} , {{ query.wifi.lon }}], {
+                    color: '#0000FF',
+                    fillColor: '#0000FF',
+                    fillOpacity: 0.5,
+                    radius: 5
+                }).addTo(mymap).bindPopup('Filtered wifi');
+            {% endif %}
+        {% endfor %}
+
+        {% for cell in log.output.cells %}
+            L.circleMarker([{{ cell.lat }} , {{ cell.lon }}], {
+                color: '#808080',
+                fillColor: '#808080',
+                fillOpacity: 0.5,
+                radius: 12
+            }).addTo(mymap).bindPopup('Cell');
+        {% endfor %}
+
+        {% for wifi in log.output.wifi %}
+            L.circleMarker([{{ wifi.lat }}, {{ wifi.lon }}], {
+                color: '#0000FF',
+                fillColor: '#0000FF',
+                fillOpacity: 0.5,
+                radius: 7
+            }).addTo(mymap).bindPopup("Used wifi");
+
+            var latlngs = [
+                [{{ wifi.lat }}, {{ wifi.lon }}],
+                [{{ log.output.lat }}, {{ log.output.lon }}]
+            ];
+            var polyline = L.polyline(latlngs, {
+                color: 'black',
+                weight: 2,
+                dashArray: '5, 5',
+                dashOffset: '0'
+            }).addTo(mymap);
+        {% endfor %}
+
+    </script>
+</body>
+</html>

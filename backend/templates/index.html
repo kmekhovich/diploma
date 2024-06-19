@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Log</title>
+</head>
+<body>
+    <h1>Global Log Entries</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Index</th>
+                <th>Input GPS</th>
+                <th>Input WiFis</th>
+                <th>Input Cells</th>
+                <th>Output</th>
+                <th>Error Code</th>
+                <th>Queries</th>
+                <th>Time</th>
+                <th>Algo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs_pagination.items %}
+            <tr>
+                <td>{{ log.index }}</td>
+                <td>{{ log.input_gps }}</td>
+                <td>{{ log.input_wifis }}</td>
+                <td>{{ log.input_cells }}</td>
+                <td>{{ log.output }}</td>
+                <td>{{ log.error_code }}</td>
+                <td>{{ log.queries }}</td>
+                <td>{{ log.timestamp }}</td>
+                <td>{{ log.algo }}</td>
+                <td><a href="{{ url_for('item', index=log.index) }}">View Details</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Элементы управленияпагинацией -->
+    <div>
+        {% if logs_pagination.has_prev %}
+        <a href="{{ url_for('index', page=logs_pagination.prev_num) }}">Previous</a>
+        {% endif %}
+        <span>Страница {{ logs_pagination.page }} из {{ logs_pagination.pages }}</span>
+        {% if logs_pagination.has_next %}
+        <a href="{{ url_for('index', page=logs_pagination.next_num) }}">Next</a>
+        {% endif %}
+    </div>
+</body>
+</html>
