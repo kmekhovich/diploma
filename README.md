@@ -2,12 +2,12 @@
 
 ## Belarusian State University, Computer Science, 2024
 
-## Algorithm of detecting location based on Wi-Fis and GSM cells.
+## Algorithm for determining the location based on Wi-Fi and GSM cells.
 
 [Work.](work.pdf)
 
 [Presentation.](presentation.pdf)
 
-[A review by scientific supervisor.](review.pdf)
+[Review by scientific supervisor.](review.pdf)
 
 [Scholarly peer review.](critique.pdf)
